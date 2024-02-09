@@ -1,8 +1,10 @@
 ﻿namespace GameOfLife.Data.Models
 {
-    public class Board
+    public class Board : ModelBase
     {
-        public Guid Id { get; set; }
+        public override Guid Id { get; set; }
+
+        public BoardStatus Status { get; set; }
 
         public int Rows { get; set; }
 

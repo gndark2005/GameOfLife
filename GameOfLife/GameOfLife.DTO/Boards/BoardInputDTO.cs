@@ -6,7 +6,7 @@ namespace GameOfLife.DTO.Boards
     {
         public int Rows { get; set; }
 
-        public int Cols { get; set; }
+        public int Columns { get; set; }
 
         public IReadOnlyCollection<Point> AliveCells { get; set; }
     }

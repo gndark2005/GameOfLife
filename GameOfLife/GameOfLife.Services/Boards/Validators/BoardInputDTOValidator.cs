@@ -11,7 +11,7 @@ namespace GameOfLife.Services.Boards.Validators
                 .GreaterThan(0)
                 .WithMessage("Rows count must be greater than 0.");
 
-            RuleFor(board => board.Cols)
+            RuleFor(board => board.Columns)
                 .GreaterThan(0)
                 .WithMessage("Cols count must be greater than 0.");
 
@@ -28,7 +28,7 @@ namespace GameOfLife.Services.Boards.Validators
         {
             foreach (var cell in board.AliveCells)
             {
-                if (cell.X < 0 || cell.X >= board.Rows || cell.Y < 0 || cell.Y >= board.Cols)
+                if (cell.X < 0 || cell.X >= board.Rows || cell.Y < 0 || cell.Y >= board.Columns)
                 {
                     return false;
                 }
