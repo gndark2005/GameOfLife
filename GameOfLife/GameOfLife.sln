@@ -1,0 +1,63 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameOfLife.Api", "GameOfLife.Api\GameOfLife.Api.csproj", "{D8755AEF-596D-423B-9E78-51009C48B74E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameOfLife.Services", "GameOfLife.Services\GameOfLife.Services.csproj", "{76D0A24D-6682-47D9-8F6D-A1B34B695FA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameOfLife.Data", "GameOfLife.Data\GameOfLife.Data.csproj", "{963F31C3-211B-465B-B3A2-E92CE165D2D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7E400CD1-10D7-48EC-90F8-47FAC44402DB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3E7EC73F-E8CE-4FBB-962A-5CCAE42E91F6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deployment", "deployment", "{81C41C63-A772-4935-8578-AD42B59CAC1E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BackEnd", "BackEnd", "{6F1954F6-D089-44C4-A3ED-A661D7BC0832}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{0CCA92B2-C4B9-41B6-BD10-FB491BF32044}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FrontEnd", "FrontEnd", "{05F42948-F482-48D5-9960-A7CCE1CCD12B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameOfLife.DTO", "GameOfLife.DTO\GameOfLife.DTO.csproj", "{19BB35EF-F3D8-4E50-86EA-F17726258264}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D8755AEF-596D-423B-9E78-51009C48B74E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8755AEF-596D-423B-9E78-51009C48B74E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8755AEF-596D-423B-9E78-51009C48B74E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8755AEF-596D-423B-9E78-51009C48B74E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76D0A24D-6682-47D9-8F6D-A1B34B695FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76D0A24D-6682-47D9-8F6D-A1B34B695FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76D0A24D-6682-47D9-8F6D-A1B34B695FA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76D0A24D-6682-47D9-8F6D-A1B34B695FA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{963F31C3-211B-465B-B3A2-E92CE165D2D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{963F31C3-211B-465B-B3A2-E92CE165D2D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{963F31C3-211B-465B-B3A2-E92CE165D2D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{963F31C3-211B-465B-B3A2-E92CE165D2D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19BB35EF-F3D8-4E50-86EA-F17726258264}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19BB35EF-F3D8-4E50-86EA-F17726258264}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19BB35EF-F3D8-4E50-86EA-F17726258264}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19BB35EF-F3D8-4E50-86EA-F17726258264}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D8755AEF-596D-423B-9E78-51009C48B74E} = {6F1954F6-D089-44C4-A3ED-A661D7BC0832}
+		{76D0A24D-6682-47D9-8F6D-A1B34B695FA8} = {6F1954F6-D089-44C4-A3ED-A661D7BC0832}
+		{963F31C3-211B-465B-B3A2-E92CE165D2D4} = {6F1954F6-D089-44C4-A3ED-A661D7BC0832}
+		{6F1954F6-D089-44C4-A3ED-A661D7BC0832} = {7E400CD1-10D7-48EC-90F8-47FAC44402DB}
+		{05F42948-F482-48D5-9960-A7CCE1CCD12B} = {7E400CD1-10D7-48EC-90F8-47FAC44402DB}
+		{19BB35EF-F3D8-4E50-86EA-F17726258264} = {0CCA92B2-C4B9-41B6-BD10-FB491BF32044}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A6545FC8-DD99-4855-9EFB-C7850D521F1A}
+	EndGlobalSection
+EndGlobal
