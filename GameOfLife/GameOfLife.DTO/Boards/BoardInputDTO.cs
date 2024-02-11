@@ -8,6 +8,6 @@ namespace GameOfLife.DTO.Boards
 
         public int Columns { get; set; }
 
-        public IReadOnlyCollection<Point> AliveCells { get; set; }
+        public IReadOnlyCollection<CellLocationDTO> AliveCells { get; set; }
     }
 }

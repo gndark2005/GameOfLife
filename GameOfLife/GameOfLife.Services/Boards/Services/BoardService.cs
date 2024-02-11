@@ -4,39 +4,46 @@ using GameOfLife.Data.Models;
 using GameOfLife.Data.Repositories.Abstractions;
 using GameOfLife.DTO.Boards;
 using GameOfLife.Services.Boards.Abstractions;
+using GameOfLife.Services.Boards.Configuration;
 using GameOfLife.Services.Cache.Abstractions;
+using GameOfLife.Services.Exceptions;
 using GameOfLife.Services.Extensions;
 using Microsoft.Extensions.Logging;
-using System.Drawing;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace GameOfLife.Services.Boards.Services
 {
     public class BoardService : IBoardService
     {
-        private const int MAX_GENERATIONS = 1000000;
-
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMemoryCacheService _memoryCacheService;
         private readonly IValidator<BoardInputDTO> _validator;
         private readonly ILogger<BoardService> _logger;
+        private readonly BoardSettings _boardSettings;
         private readonly IMapper _mapper;
 
         public BoardService(
             IUnitOfWork unitOfWork,
             IMemoryCacheService memoryCacheService,
             IValidator<BoardInputDTO> validator,
-            ILogger<BoardService> logger)
+            ILogger<BoardService> logger,
+            IOptions<BoardSettings> boardSettings,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _memoryCacheService = memoryCacheService;
             _validator = validator;
             _logger = logger;
+            _boardSettings = boardSettings.Value;
+            _mapper = mapper;
         }
 
         public async Task<Guid> CreateBoardAsync(BoardInputDTO boardInputDTO)
         {
             await AssertValidBoardInputDTOAsync(boardInputDTO);
+
+            var aliveCells = _mapper.Map<IEnumerable<CellLocation>>(boardInputDTO.AliveCells);
 
             var board = new Board
             {
@@ -44,13 +51,15 @@ namespace GameOfLife.Services.Boards.Services
                 Status = BoardStatus.Active,
                 Rows = boardInputDTO.Rows,
                 Columns = boardInputDTO.Columns,
-                AliveCellsJson = JsonSerializer.Serialize(boardInputDTO.AliveCells),
+                AliveCellsJson = JsonSerializer.Serialize(aliveCells),
                 CreationDatetime = DateTime.UtcNow,
                 LastUpdateDatetime = DateTime.UtcNow,
                 CurrentGeneration = 0
             };
 
             await _unitOfWork.BoardRepository.InsertAsync(board);
+            await _unitOfWork.SaveChangesAsync();
+
             _memoryCacheService.AddToCache(board.Id.ToString(), board);
 
             _logger.LogInformation("Board with Id {board.Id} created", board.Id);
@@ -58,105 +67,91 @@ namespace GameOfLife.Services.Boards.Services
             return board.Id;
         }
 
-        public async Task<BoardOutputDTO> GetBoardNextGenerationAsync(Guid boardId)
+        public async Task<BoardOutputDTO> GetBoardCurrentStatusAsync(Guid boardId)
         {
             var board = await GetBoardAsync(boardId);
-            var cells = board.GetCells();
+            var result = _mapper.Map<BoardOutputDTO>(board);
+            result.AliveCells = _mapper.Map<IEnumerable<CellLocationDTO>>(board.GetCells().GetAliveCells());
+            return result;
+        }
 
-            if (board.Status != BoardStatus.Active) throw new InvalidOperationException($"Board with Id {boardId} is not active");
-
-            cells = CalculateNextGeneration(cells);
-
-            board.CurrentGeneration++;
-            board.LastUpdateDatetime = DateTime.UtcNow;
-            board.AliveCellsJson = JsonSerializer.Serialize(cells.GetAliveCells());
-
-            _unitOfWork.BoardRepository.Update(board);
-            _memoryCacheService.AddToCache(board.Id.ToString(), board);
-
-            var result = new BoardOutputDTO
-            {
-                BoardId = board.Id,
-                CurrenGeneration = board.CurrentGeneration,
-                Status = (BoardStatusDTO)board.Status,
-                Cells = cells
-            };
-
+        public async Task<BoardOutputDTO> GetBoardNextGenerationAsync(Guid boardId)
+        {
+            var result = await ProcessBoardAsync(boardId, 1);
             return result;
         }
 
         public async Task<BoardOutputDTO> GetBoardNextNumberOfGenerationsAsync(Guid boardId, int NumberOfGenerations)
         {
-            var board = await GetBoardAsync(boardId);
-            var cells = board.GetCells();
-
-            if (board.Status != BoardStatus.Active) throw new InvalidOperationException($"Board with Id {boardId} is not active");
-
-            for (int i = 0; i < NumberOfGenerations; i++)
-            {
-                cells = CalculateNextGeneration(cells);
-            }
-
-            board.CurrentGeneration += NumberOfGenerations;
-            board.LastUpdateDatetime = DateTime.UtcNow;
-            board.AliveCellsJson = JsonSerializer.Serialize(cells.GetAliveCells());
-
-            _unitOfWork.BoardRepository.Update(board);
-            _memoryCacheService.AddToCache(board.Id.ToString(), board);
-
-            var result = _mapper.Map<BoardOutputDTO>(board);
-            result.Cells = cells;
-
+            var result = await ProcessBoardAsync(boardId, NumberOfGenerations);
             return result;
         }
 
         public async Task<BoardOutputDTO> GetBoardUntilFinalizedAsync(Guid boardId)
         {
+            var result = await ProcessBoardAsync(boardId, -1);
+            return result;
+        }
+
+        private async Task<BoardOutputDTO> ProcessBoardAsync(Guid boardId, int numberOfGenerations)
+        {
             var board = await GetBoardAsync(boardId);
             var cells = board.GetCells();
 
-            while (true)
+            if (board.Status != BoardStatus.Active)
+                throw new BoardNotActiveException(boardId);
+
+            // if numberOfGenerations is negative, it will loop until the board is finalized
+            if (numberOfGenerations < 0)
             {
-                var newCells = CalculateNextGeneration(cells);
-
-                if (newCells.AreEqual(cells))
+                while (true)
                 {
-                    board.Status = BoardStatus.Finalized;
-                    break;
-                }
-                else
-                {
-                    cells = newCells;
-                    board.CurrentGeneration++;
+                    var newCells = CalculateNextGeneration(cells);
 
-                    if (board.CurrentGeneration > MAX_GENERATIONS)
+                    if (newCells.AreEqual(cells))
                     {
-                        board.Status = BoardStatus.Invalid;
+                        board.Status = BoardStatus.Finalized;
                         break;
+                    }
+                    else
+                    {
+                        cells = newCells;
+                        board.CurrentGeneration++;
+
+                        if (board.CurrentGeneration > _boardSettings.MaxGeneration)
+                        {
+                            board.Status = BoardStatus.Invalid;
+                            break;
+                        }
                     }
                 }
             }
+            else
+            {
+                for (int i = 0; i < numberOfGenerations; i++)
+                {
+                    cells = CalculateNextGeneration(cells);
+                }
+            }
 
+            var aliveCells = cells.GetAliveCells();
+
+            board.CurrentGeneration += numberOfGenerations;
             board.LastUpdateDatetime = DateTime.UtcNow;
-            board.AliveCellsJson = JsonSerializer.Serialize(cells.GetAliveCells());
+            board.AliveCellsJson = JsonSerializer.Serialize(aliveCells);
 
             _unitOfWork.BoardRepository.Update(board);
+            await _unitOfWork.SaveChangesAsync();
+
             _memoryCacheService.AddToCache(board.Id.ToString(), board);
 
             if (board.Status == BoardStatus.Invalid)
             {
-                throw new OverflowException($"Board with Id {board.Id} has exceded maximum generation.");
+                throw new OverflowException($"Board with Id {board.Id} has exceeded maximum generation.");
             }
 
             var result = _mapper.Map<BoardOutputDTO>(board);
-            result.Cells = cells;
-            //var result = new BoardOutputDTO
-            //{
-            //    BoardId = board.Id,
-            //    CurrenGeneration = board.CurrentGeneration,
-            //    Status = (BoardStatusDTO)board.Status,
-            //    Cells = cells
-            //};
+            result.AliveCells = _mapper.Map<IEnumerable<CellLocationDTO>>(aliveCells);
 
             return result;
         }
@@ -168,7 +163,7 @@ namespace GameOfLife.Services.Boards.Services
 
             if (board == null)
             {
-                throw new InvalidOperationException($"Board with Id {boardId} not found");
+                throw new BoardNotFoundException(boardId);
             }
 
             return board;
@@ -183,7 +178,7 @@ namespace GameOfLife.Services.Boards.Services
                 _logger.LogError(message: "Validation of BoardInputDTO failed");
                 validationResult.Errors.ForEach(error =>
                 {
-                    _logger.LogError(message: error.ToString());
+                    _logger.LogError("Error occurred: {errorMessage}", error.ToString());
                 });
 
                 throw new ValidationException(validationResult.Errors);
@@ -195,21 +190,26 @@ namespace GameOfLife.Services.Boards.Services
             var rows = cells.GetLength(0);
             var cols = cells.GetLength(1);
             var newCells = new byte[rows, cols];
-            var aliveCells = new List<Point>();
 
-            var getAliveNeigbors = new Func<Point, int>(cell =>
+            var getAliveNeigbors = new Func<CellLocationDTO, int>(cell =>
             {
                 var aliveNeighbors = 0;
 
                 for (int x = cell.X - 1; x <= cell.X + 1; x++)
+                {
                     for (int y = cell.Y - 1; y <= cell.Y + 1; y++)
-                        if (x >= 0 && x < rows && y >= 0 && y < cols)
-                            aliveNeighbors += cells[x, y];
+                    {
+                        if (x >= 0 && x < rows && y >= 0 && y < cols && !(x == cell.X && y == cell.Y) && cells[x, y] == 1)
+                        {
+                            aliveNeighbors++;
+                        }
+                    }
+                }
 
                 return aliveNeighbors;
             });
 
-            var calculateNextStatus = new Func<Point, byte>(cell =>
+            var calculateNextStatus = new Func<CellLocationDTO, byte>(cell =>
             {
                 var aliveNeighbors = getAliveNeigbors(cell);
 
@@ -229,13 +229,13 @@ namespace GameOfLife.Services.Boards.Services
             return newCells;
         }
 
-        private static IEnumerable<Point> GetAllCells(int rows, int cols)
+        private static IEnumerable<CellLocationDTO> GetAllCells(int rows, int cols)
         {
             for (int x = 0; x < rows; x++)
             {
                 for (int y = 0; y < cols; y++)
                 {
-                    yield return new Point(x, y);
+                    yield return new CellLocationDTO(x, y);
                 }
             }
         }

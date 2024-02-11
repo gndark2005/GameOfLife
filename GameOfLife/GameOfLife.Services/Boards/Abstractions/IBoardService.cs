@@ -4,12 +4,14 @@ namespace GameOfLife.Services.Boards.Abstractions
 {
     public interface IBoardService
     {
-        public Task<Guid> CreateBoardAsync(BoardInputDTO boardInputDTO);
+        Task<Guid> CreateBoardAsync(BoardInputDTO boardInputDTO);
 
-        public Task<BoardOutputDTO> GetBoardNextGenerationAsync(Guid boardId);
+        Task<BoardOutputDTO> GetBoardCurrentStatusAsync(Guid boardId);
 
-        public Task<BoardOutputDTO> GetBoardNextNumberOfGenerationsAsync(Guid boardId, int NumberOfGenerations);
+        Task<BoardOutputDTO> GetBoardNextGenerationAsync(Guid boardId);
 
-        public Task<BoardOutputDTO> GetBoardUntilFinalizedAsync(Guid boardId);
+        Task<BoardOutputDTO> GetBoardNextNumberOfGenerationsAsync(Guid boardId, int NumberOfGenerations);
+
+        Task<BoardOutputDTO> GetBoardUntilFinalizedAsync(Guid boardId);
     }
 }

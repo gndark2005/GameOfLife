@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using GameOfLife.Data.Models;
+using GameOfLife.DTO.Boards;
 
 namespace GameOfLife.Services.Extensions
 {
@@ -25,9 +26,9 @@ namespace GameOfLife.Services.Extensions
             return true;
         }
 
-        public static IEnumerable<Point> GetAliveCells(this byte[,] cells)
+        public static IEnumerable<CellLocation> GetAliveCells(this byte[,] cells)
         {
-            var aliveCells = new List<Point>();
+            var aliveCells = new List<CellLocation>();
 
             for (int x = 0; x < cells.GetLength(0); x++)
             {
@@ -35,7 +36,7 @@ namespace GameOfLife.Services.Extensions
                 {
                     if (cells[x, y] == 1)
                     {
-                        aliveCells.Add(new Point(x, y));
+                        aliveCells.Add(new CellLocation(x, y));
                     }
                 }
             }

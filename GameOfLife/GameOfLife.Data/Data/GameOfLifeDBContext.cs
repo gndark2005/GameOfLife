@@ -9,6 +9,7 @@ namespace GameOfLife.Data.Data
         public GameOfLifeDBContext(DbContextOptions dbContextOptions)
            : base(dbContextOptions)
         {
+            Database.Migrate();
         }
 
         public DbSet<Board> Boards { get; set; }

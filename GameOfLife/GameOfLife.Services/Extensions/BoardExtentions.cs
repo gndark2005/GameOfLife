@@ -1,5 +1,4 @@
 ﻿using GameOfLife.Data.Models;
-using System.Drawing;
 using System.Text.Json;
 
 namespace GameOfLife.Services.Extensions
@@ -8,7 +7,7 @@ namespace GameOfLife.Services.Extensions
     {
         public static byte[,] GetCells(this Board board)
         {
-            var aliveCells = JsonSerializer.Deserialize<IReadOnlyCollection<Point>>(board.AliveCellsJson)
+            var aliveCells = JsonSerializer.Deserialize<IReadOnlyCollection<CellLocation>>(board.AliveCellsJson)
                 ?? throw new InvalidOperationException($"AliveCellsJson is null in board {board.Id} ");
 
             var cells = new byte[board.Rows, board.Columns];

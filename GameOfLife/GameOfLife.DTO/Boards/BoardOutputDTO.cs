@@ -4,10 +4,14 @@
     {
         public Guid BoardId { get; set; }
 
-        public int CurrenGeneration { get; set; }
+        public int CurrentGeneration { get; set; }
 
         public BoardStatusDTO Status { get; set; }
 
-        public byte[,] Cells { get; set; }
+        public int Rows { get; set; }
+
+        public int Columns { get; set; }
+
+        public IEnumerable<CellLocationDTO> AliveCells { get; set; }
     }
 }
