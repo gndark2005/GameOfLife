@@ -1,5 +1,4 @@
 ﻿using GameOfLife.Data.Models;
-using GameOfLife.DTO.Boards;
 
 namespace GameOfLife.Services.Extensions
 {

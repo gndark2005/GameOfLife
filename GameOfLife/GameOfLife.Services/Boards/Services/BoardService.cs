@@ -72,24 +72,28 @@ namespace GameOfLife.Services.Boards.Services
             var board = await GetBoardAsync(boardId);
             var result = _mapper.Map<BoardOutputDTO>(board);
             result.AliveCells = _mapper.Map<IEnumerable<CellLocationDTO>>(board.GetCells().GetAliveCells());
+
             return result;
         }
 
         public async Task<BoardOutputDTO> GetBoardNextGenerationAsync(Guid boardId)
         {
             var result = await ProcessBoardAsync(boardId, 1);
+
             return result;
         }
 
         public async Task<BoardOutputDTO> GetBoardNextNumberOfGenerationsAsync(Guid boardId, int NumberOfGenerations)
         {
             var result = await ProcessBoardAsync(boardId, NumberOfGenerations);
+
             return result;
         }
 
         public async Task<BoardOutputDTO> GetBoardUntilFinalizedAsync(Guid boardId)
         {
             var result = await ProcessBoardAsync(boardId, -1);
+
             return result;
         }
 
@@ -101,42 +105,36 @@ namespace GameOfLife.Services.Boards.Services
             if (board.Status != BoardStatus.Active)
                 throw new BoardNotActiveException(boardId);
 
-            // if numberOfGenerations is negative, it will loop until the board is finalized
-            if (numberOfGenerations < 0)
+            // if numberOfGenerations is negative, it will loop until the board is finalized.
+            var remainingGenerations = numberOfGenerations < 0 ? int.MaxValue : numberOfGenerations;
+
+            while (remainingGenerations > 0)
             {
-                while (true)
+                var newCells = CalculateNextGeneration(cells);
+
+                if (newCells.AreEqual(cells))
                 {
-                    var newCells = CalculateNextGeneration(cells);
-
-                    if (newCells.AreEqual(cells))
-                    {
-                        board.Status = BoardStatus.Finalized;
-                        break;
-                    }
-                    else
-                    {
-                        cells = newCells;
-                        board.CurrentGeneration++;
-
-                        if (board.CurrentGeneration > _boardSettings.MaxGeneration)
-                        {
-                            board.Status = BoardStatus.Invalid;
-                            break;
-                        }
-                    }
+                    board.Status = BoardStatus.Finalized;
+                    break;
                 }
-            }
-            else
-            {
-                for (int i = 0; i < numberOfGenerations; i++)
+
+                cells = newCells;
+                board.CurrentGeneration++;
+
+                if (numberOfGenerations >= 0)
                 {
-                    cells = CalculateNextGeneration(cells);
+                    remainingGenerations--;
+                }
+
+                if (board.CurrentGeneration >= _boardSettings.MaxGeneration)
+                {
+                    board.Status = BoardStatus.Invalid;
+                    break;
                 }
             }
 
             var aliveCells = cells.GetAliveCells();
 
-            board.CurrentGeneration += numberOfGenerations;
             board.LastUpdateDatetime = DateTime.UtcNow;
             board.AliveCellsJson = JsonSerializer.Serialize(aliveCells);
 
@@ -169,29 +167,14 @@ namespace GameOfLife.Services.Boards.Services
             return board;
         }
 
-        private async Task AssertValidBoardInputDTOAsync(BoardInputDTO boardInputDTO)
-        {
-            var validationResult = await _validator.ValidateAsync(boardInputDTO);
-
-            if (!validationResult.IsValid)
-            {
-                _logger.LogError(message: "Validation of BoardInputDTO failed");
-                validationResult.Errors.ForEach(error =>
-                {
-                    _logger.LogError("Error occurred: {errorMessage}", error.ToString());
-                });
-
-                throw new ValidationException(validationResult.Errors);
-            }
-        }
-
         private static byte[,] CalculateNextGeneration(byte[,] cells)
         {
             var rows = cells.GetLength(0);
             var cols = cells.GetLength(1);
             var newCells = new byte[rows, cols];
 
-            var getAliveNeigbors = new Func<CellLocationDTO, int>(cell =>
+            // Anonymous function to get the number of alive neighbors for each cell.
+            var getAliveNeighbors = new Func<CellLocationDTO, int>(cell =>
             {
                 var aliveNeighbors = 0;
 
@@ -209,9 +192,10 @@ namespace GameOfLife.Services.Boards.Services
                 return aliveNeighbors;
             });
 
+            // Anonymous function to calculate the next status of each cell.
             var calculateNextStatus = new Func<CellLocationDTO, byte>(cell =>
             {
-                var aliveNeighbors = getAliveNeigbors(cell);
+                var aliveNeighbors = getAliveNeighbors(cell);
 
                 if (aliveNeighbors < 2 || aliveNeighbors > 3)
                     return 0;
@@ -237,6 +221,22 @@ namespace GameOfLife.Services.Boards.Services
                 {
                     yield return new CellLocationDTO(x, y);
                 }
+            }
+        }
+
+        private async Task AssertValidBoardInputDTOAsync(BoardInputDTO boardInputDTO)
+        {
+            var validationResult = await _validator.ValidateAsync(boardInputDTO);
+
+            if (!validationResult.IsValid)
+            {
+                _logger.LogError(message: "Validation of BoardInputDTO failed");
+                validationResult.Errors.ForEach(error =>
+                {
+                    _logger.LogError("Error occurred: {errorMessage}", error.ToString());
+                });
+
+                throw new ValidationException(validationResult.Errors);
             }
         }
     }

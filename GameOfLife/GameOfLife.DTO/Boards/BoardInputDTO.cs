@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace GameOfLife.DTO.Boards
+﻿namespace GameOfLife.DTO.Boards
 {
     public  class BoardInputDTO
     {

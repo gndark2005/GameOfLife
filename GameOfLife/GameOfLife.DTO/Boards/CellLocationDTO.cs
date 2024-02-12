@@ -13,12 +13,13 @@
             X = x;
             Y = y;
         }
+
         public override bool Equals(object? obj)
         {
             if (obj == null || GetType() != obj.GetType())
                 return false;
 
-            CellLocationDTO other = (CellLocationDTO)obj;
+            var other = (CellLocationDTO)obj;
             return X == other.X && Y == other.Y;
         }
 

@@ -28,9 +28,6 @@ namespace GameOfLife.Data.Repositories
         public void Update(TEntity entityToUpdate)
         {
             _dbSet.Update(entityToUpdate);
-            //var entityToFind = _dbSet.Find(entityToUpdate.Id);
-            //if (entityToFind == null) return;
-            //_dbSet.Entry(entityToFind).CurrentValues.SetValues(entityToUpdate);
         }
     }
 }

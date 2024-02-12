@@ -18,7 +18,6 @@ using Models = GameOfLife.Data.Models;
 
 namespace GameOfLife.Tests.Services.Board
 {
-
     public class BoardServiceTests
     {
         private readonly IValidator<BoardInputDTO> _validator;
@@ -77,7 +76,7 @@ namespace GameOfLife.Tests.Services.Board
         }
 
         [Fact]
-        public async Task GetBoardCurrentStatusAsync_GivenBoardID_ShouldReturnBoardNextGeneration()
+        public async Task GetBoardNextGenerationAsync_GivenBoardID_ShouldReturnBoardNextGeneration()
         {
             // Arrange
 
@@ -105,12 +104,20 @@ namespace GameOfLife.Tests.Services.Board
             _memoryCacheServiceMock
                 .Setup(x => x.GetFromCache<Models.Board>(boardId.ToString()))
                 .Returns(boardDb);
+
             _memoryCacheServiceMock
                 .Setup(x => x.AddToCache(It.IsAny<string>(), It.IsAny<Models.Board>()))
                 .Verifiable();
 
+            Models.Board savedBoard = null;
 
-            _unitOfWorkMock.Setup(u => u.BoardRepository.Update(It.IsAny<Models.Board>())).Verifiable();
+            _unitOfWorkMock.Setup(u => u.BoardRepository.Update(It.IsAny<Models.Board>()))
+                 .Callback<Models.Board>(entity =>
+                 {
+                     savedBoard = entity;
+                 })
+                .Verifiable();
+
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).Verifiable();
 
             // Act
@@ -120,6 +127,65 @@ namespace GameOfLife.Tests.Services.Board
             // Assert
 
             result.CurrentGeneration.Should().Be(1);
+            result.Status.Should().Be(BoardStatusDTO.Active);
+            savedBoard?.Id.Should().Be(boardId);
+            Assert.True(expectedAliveCells.SequenceEqual(result.AliveCells));
+        }
+
+        [Fact]
+        public async Task GetBoardNextNumberOfGenerationsAsync_GivenBoardIDAnd2NumberOfGenerations_ShouldReturnBoardNextSecondGeneration()
+        {
+            // Arrange
+
+            var boardAliveCells = new List<Models.CellLocation>()
+                {
+                   new (1,0),
+                   new (1,1),
+                   new (1,2)
+                };
+
+            var expectedAliveCells = new List<CellLocationDTO>()
+                {
+                   new (1,0),
+                   new (1,1),
+                   new (1,2)
+                };
+
+            var boardId = Guid.NewGuid();
+            var boardDb = new BoardBuilder()
+                .WithId(boardId)
+                .WithCurrentGeneration(0)
+                .WithAliveCellsJson(JsonSerializer.Serialize(boardAliveCells))
+                .Build();
+
+            _memoryCacheServiceMock
+                .Setup(x => x.GetFromCache<Models.Board>(boardId.ToString()))
+                .Returns(boardDb);
+
+            _memoryCacheServiceMock
+                .Setup(x => x.AddToCache(It.IsAny<string>(), It.IsAny<Models.Board>()))
+                .Verifiable();
+
+            Models.Board savedBoard = null;
+
+            _unitOfWorkMock.Setup(u => u.BoardRepository.Update(It.IsAny<Models.Board>()))
+                 .Callback<Models.Board>(entity =>
+                 {
+                     savedBoard = entity;
+                 })
+                .Verifiable();
+
+            _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).Verifiable();
+
+            // Act
+
+            var result = await _boardService.GetBoardNextNumberOfGenerationsAsync(boardId, 2);
+
+            // Assert
+
+            result.CurrentGeneration.Should().Be(2);
+            result.Status.Should().Be(BoardStatusDTO.Active);
+            savedBoard?.Id.Should().Be(boardId);
             Assert.True(expectedAliveCells.SequenceEqual(result.AliveCells));
         }
 
@@ -152,16 +218,26 @@ namespace GameOfLife.Tests.Services.Board
             _memoryCacheServiceMock
                 .Setup(x => x.GetFromCache<Models.Board>(boardId.ToString()))
                 .Returns(boardDb);
+
             _memoryCacheServiceMock
                 .Setup(x => x.AddToCache(It.IsAny<string>(), It.IsAny<Models.Board>()))
                 .Verifiable();
 
+            Models.Board savedBoard = null;
 
-            _unitOfWorkMock.Setup(u => u.BoardRepository.Update(It.IsAny<Models.Board>())).Verifiable();
+            _unitOfWorkMock.Setup(u => u.BoardRepository.Update(It.IsAny<Models.Board>()))
+                 .Callback<Models.Board>(entity =>
+                 {
+                     savedBoard = entity;
+                 })
+                .Verifiable();
+
             _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).Verifiable();
 
             // Act & Assert
 
+            savedBoard?.Status.Should().Be(Models.BoardStatus.Invalid);
+            savedBoard?.Id.Should().Be(boardId);
             await Assert.ThrowsAsync<OverflowException>(async () => await _boardService.GetBoardUntilFinalizedAsync(boardId));
         }
     }
