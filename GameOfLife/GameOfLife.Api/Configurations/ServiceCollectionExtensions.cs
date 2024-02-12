@@ -12,6 +12,7 @@ using GameOfLife.Services.Cache.Configuration;
 using GameOfLife.Services.Cache.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace GameOfLife.Api.Configurations
 {
@@ -49,6 +50,12 @@ namespace GameOfLife.Api.Configurations
                 .AddSwaggerGen(options =>
                      {
                          options.SwaggerDoc("GameOfLife-v1", new OpenApiInfo { Title = "Game Of Life API", Version = "v1" });
+                         var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                         if (File.Exists(xmlPath))
+                         {
+                             options.IncludeXmlComments(xmlPath);
+                         }
                      });
         }
     }
